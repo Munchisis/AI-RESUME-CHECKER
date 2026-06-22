@@ -4,7 +4,9 @@ const { z } = require("zod");
 const env = require("../config/env");
 const ApiError = require("../utils/ApiError");
 
-const ai = env.geminiApiKey ? new GoogleGenAI({ apiKey: env.geminiApiKey }) : null;
+const ai = env.geminiApiKey
+  ? new GoogleGenAI({ apiKey: env.geminiApiKey })
+  : null;
 
 const responseSchema = {
   type: Type.OBJECT,
@@ -105,10 +107,13 @@ const analysisValidator = z.object({
     .array(
       z.object({
         title: z.string(),
-        evidence: z.string()
-      })).min(1),
-  bulletRewrites: z.array(
-    z.object({
+        evidence: z.string(),
+      }),
+    )
+    .min(1),
+  bulletRewrites: z
+    .array(
+      z.object({
         section: z.string(),
         original: z.string(),
         rewritten: z.string(),
@@ -133,20 +138,20 @@ function buildPrompt({ rawText, targetRole }) {
     "Rewrites must preserve the original meaning. Each rewrite needs a one-line rationale.",
     "Identify keywords clearly present and notable keywords missing for the apparent target role.",
     "Be specific and evidence-based - cite phrasing from the resume in explanations.",
-      "",
+    "",
     "RESUME TEXT:",
-  "-------------",
+    "-------------",
     rawText,
-  "-------------",
-  ].join("\n")
-};
+    "-------------",
+  ].join("\n");
+}
 
 async function callGemini(prompt) {
   const result = await ai.models.generateContent({
     model: env.geminiModel,
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
-      responseMimeType: 'application/json',
+      responseMimeType: "application/json",
       responseSchema,
       temperature: 0.4,
     },
@@ -161,21 +166,21 @@ async function callGemini(prompt) {
   };
 }
 
-async function analyzeResume({ rawText, targetRole}) {
+async function analyzeResume({ rawText, targetRole }) {
   if (!ai) {
-    throw ApiError.internal(
-      'GEMINI_API_KEY is not configured on the server.'
-    );
+    throw ApiError.internal("GEMINI_API_KEY is not configured on the server.");
   }
 
   const prompt = buildPrompt({ rawText, targetRole });
 
   let lastErr;
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  for (let attempt = 1; attempt <= 5; attempt++) {
     try {
       const { text, usage } = await callGemini(prompt);
+
       const parsed = JSON.parse(text);
       const validated = analysisValidator.parse(parsed);
+
       return {
         analysis: validated,
         model: env.geminiModel,
@@ -184,12 +189,36 @@ async function analyzeResume({ rawText, targetRole}) {
       };
     } catch (err) {
       lastErr = err;
-      if (attempt === 2) break;
+
+      const message = err?.message || "";
+
+      const retryable =
+        status === 503 ||
+        status === "503" ||
+        message.includes("UNAVAILABLE") ||
+        message.includes("high demand");
+
+      const status = err?.status || err?.code || err?.error?.code;
+
+      if (!retryable || attempt === 5) {
+        break;
+      }
+
+      const delay = Math.pow(2, attempt) * 1000;
+
+      console.log(`Gemini busy. Retry ${attempt}/5 in ${delay}ms`);
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-  throw ApiError.internal(
-    `Gemini analysis failed: ${lastErr?.message || "unknown error"}`
-  );
+  if (
+    lastErr?.message?.includes("UNAVAILABLE") ||
+    lastErr?.message?.includes("high demand")
+  ) {
+    throw ApiError.serviceUnavailable(
+      "Resume analysis service is temporarily busy. Please try again in a minute.",
+    );
+  }
 }
 
 module.exports = { analyzeResume };

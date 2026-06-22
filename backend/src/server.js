@@ -49,6 +49,8 @@ app.use("/api/history", historyRouter);
 app.use(notFound);
 app.use(errorHandler);
 
+console.log("Gemini Model:", env.geminiModel);
+
 async function startServer() {
   try {
     await connectDB();
