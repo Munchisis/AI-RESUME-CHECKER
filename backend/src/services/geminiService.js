@@ -190,15 +190,12 @@ async function analyzeResume({ rawText, targetRole }) {
     } catch (err) {
       lastErr = err;
 
-      const message = err?.message || "";
-
+      const status = err?.status || err?.code || err?.error?.code;
       const retryable =
         status === 503 ||
         status === "503" ||
         message.includes("UNAVAILABLE") ||
         message.includes("high demand");
-
-      const status = err?.status || err?.code || err?.error?.code;
 
       if (!retryable || attempt === 5) {
         break;
@@ -219,6 +216,9 @@ async function analyzeResume({ rawText, targetRole }) {
       "Resume analysis service is temporarily busy. Please try again in a minute.",
     );
   }
+  throw ApiError.internal(
+    `Gemini analysis failed: ${lastErr?.message || "unknown error"}`,
+  );
 }
 
 module.exports = { analyzeResume };

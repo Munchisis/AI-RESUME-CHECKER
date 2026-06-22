@@ -109,7 +109,7 @@ const validator = z.object({
     location: z.string().default(""),
     email: z.string().default(""),
     phone: z.string().default(""),
-    link: z.array(z.object({ label: z.string(), url: z.string() })).default([]),
+    links: z.array(z.object({ label: z.string(), url: z.string() })).default([]),
   }),
   summary: z.string().default(""),
   experiences: z
@@ -195,7 +195,7 @@ const EMPTY = {
   skills: [],
   projects: [],
   certifications: [],
-  language: [],
+  languages: [],
   interests: [],
 };
 

@@ -339,7 +339,7 @@ router.post(
 const diffQuery = z.object({
   from: objectIdSchema,
   to: objectIdSchema,
-  node: z.enum(["words", "lines"]).optional(),
+  mode: z.enum(["words", "lines"]).optional(),
 });
 
 router.get(
@@ -353,7 +353,7 @@ router.get(
       loadVersion(resume._id, req.query.to),
     ]);
 
-    const parts = diffText(fromV.rawText, toV.rawText, req.query.node);
+    const parts = diffText(fromV.rawText, toV.rawText, req.query.mode);
     res.json({
       from: { id: fromV._id, label: fromV.label, versionNumber: fromV.versionNumber },
       to: { id: toV._id, label: toV.label, versionNumber: toV.versionNumber },
