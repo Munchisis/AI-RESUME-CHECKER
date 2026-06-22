@@ -13,7 +13,6 @@ const userSchema = new mongoose.Schema(
         /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
         "invalid Email",
       ],
-      index: true,
     },
     passwordHash: {
       type: String,
