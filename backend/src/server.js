@@ -38,7 +38,7 @@ if (!env.isProd) {
 }
 
 app.use("/api/health", healthRouter);
-app.use("/api/auth", authRouther);
+app.use("/api/auth", authRouter);
 app.use("/api/resumes", resumeRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/insights", insightsRouter);
