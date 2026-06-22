@@ -318,7 +318,15 @@ function shortenUrl(url) {
 }
 
 export function ResumeDocument({ user, version, title }) {
-  const p = version?.parsedSections || {};
+  // backend stores parsed sections as `parseSection`; older clients used `parsedSections`.
+  // Accept either and normalize plural keys to the singular names used in this component.
+  const rawParsed = version?.parsedSections || version?.parseSection || {};
+  const p = {
+    ...rawParsed,
+    // normalize naming differences
+    experience: rawParsed.experiences || rawParsed.experience || [],
+    education: rawParsed.educations || rawParsed.education || [],
+  };
   const basics = p.basics || {};
 
   const displayName = basics.name?.trim() || user?.name || "Your Name";
