@@ -1,10 +1,10 @@
-const  pdfParse  = require("pdf-parse");
+const  PDFParse  = require("pdf-parse");
 const ApiError = require("../utils/ApiError");
 
 async function extractText(buffer) {
 
   try {
-    const result = await pdfParse(buffer);
+    const result = await PDFParse(buffer);
 
     const text = (result.text || "").trim();
     if (!text || text.length < 50) {
