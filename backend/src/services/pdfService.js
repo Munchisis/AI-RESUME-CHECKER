@@ -5,11 +5,7 @@ const ApiError = require("../utils/ApiError");
 async function extractText(buffer) {
   let parser = null;
   try {
-    // 2. Instantiate the parser with your buffer data
-    parser = new PDFParse({ data: buffer });
-
-    // 3. Call getText() to extract the text
-    const result = await parser.getText();
+    const result = await pdfParse(buffer);
 
     const text = (result.text || "").trim();
     if (!text || text.length < 50) {
