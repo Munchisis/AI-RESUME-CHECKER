@@ -1,34 +1,28 @@
-// 1. Destructure PDFParse from the module instead of trying to require it as a function
+// Destructure PDFParse from the module
 const { PDFParse } = require("pdf-parse");
 const ApiError = require("../utils/ApiError");
 
 async function extractText(buffer) {
   let parser = null;
   try {
-    const result = await pdfParse(buffer);
+    // Instantiate using the class name
+    parser = new PDFParse({ data: buffer });
+    const result = await parser.getText();
 
     const text = (result.text || "").trim();
     if (!text || text.length < 50) {
-      throw ApiError.badRequest(
-        "Could not extract readable text - is this a scanned/image-only PDF",
-      );
+      throw ApiError.badRequest("Could not extract readable text...");
     }
 
     return {
       text,
-      meta: {
-        // v2 uses page objects or general results depending on your options
-        numPages: result.pages?.length || null,
-      },
+      meta: { numPages: result.pages?.length || null },
     };
   } catch (err) {
     if (err.isOperational) throw err;
     console.error("PDF parse error:", err);
-    throw ApiError.badRequest(
-      "Failed to parse PDF. Please ensure it's a valid PDF file.",
-    );
+    throw ApiError.badRequest("Failed to parse PDF.");
   } finally {
-    // 4. Always clean up/destroy the parser instance to free up memory
     if (parser && typeof parser.destroy === "function") {
       await parser.destroy();
     }
